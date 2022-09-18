@@ -6,8 +6,8 @@ class Clientes {
     constructor(nombre, apellido, dni, monto, plazo, veraz) {
         this.nombre = nombre,
             this.apellido = apellido,
-            this.dni = dni
-        this.monto = monto,
+            this.dni = dni,
+            this.monto = monto,
             this.plazo = plazo,
             this.veraz = veraz
     }
@@ -34,6 +34,10 @@ let plazoP = document.getElementById("plazoP")
 let clienteLog = document.getElementById("cliente")
 let ultCliente = document.getElementById("ultCl")
 let buscarDNI = document.getElementById("buscarP")
+let DNI = document.querySelector(`#dni`)
+let ocultarR = document.getElementById(`ocultarR`)
+let reg = document.createElement(`div`)
+let cotizacion = document.getElementById(`cotizacionReal`)
 
 // BOTONES
 
@@ -46,7 +50,12 @@ btnLog.addEventListener("click", registroC)
 let btnP = document.getElementById("btnP")
 btnP.addEventListener("click", buscarP)
 
+let btnOcultar = document.getElementById(`ocultarR`)
+btnOcultar.addEventListener("click", ocultarReg)
+
 // FUNCIONES
+
+// SOLICITAR
 
 function solicitarP() {
     nombre = nameP.value;
@@ -86,8 +95,19 @@ function solicitarP() {
 
     ultCliente.appendChild(ultSol)
 
+    Swal.fire({
+        position: 'top',
+        icon: 'success',
+        title: 'Estamos procesando tu solicitud',
+        text: `Sr/a ${nuevoCl.nombre} su préstamo de ${nuevoCl.monto} está siendo procesado. Su préstamo a devolver es de ${aDevolver}(${interesTotal} de interés) en ${nuevoCl.plazo} cuotas`,
+        showConfirmButton: false,
+        timer: 5500
+    })
+
     console.log(`Felicitaciones ${nuevoCl.nombre} su préstamo de ${nuevoCl.monto} fue depositado con éxito en su cuenta. Su préstamo a devolver es de ${aDevolver}(${interesTotal} de interés) en ${nuevoCl.plazo} cuotas`)
 }
+
+// CALCULADOR POR VERAZ
 
 function analizarV() {
     if (veraz = 1) {
@@ -103,6 +123,8 @@ function analizarV() {
     }
 }
 
+// CALCULADOR POR PLAZO
+
 function analizarP() {
     if (plazo <= 6) {
         aDevolverP = this.monto * 0.06
@@ -117,38 +139,80 @@ function analizarP() {
     }
 }
 
+//VER REG DE CLIENTES
+
 function registroC() {
     for (e of registroClientes) {
 
-        clienteLog.innerHTML = `<p> Nombre: ${e.nombre} </p>
+        reg.innerHTML += `<p> Nombre: ${e.nombre} </p>
         <p> Apellido: ${e.apellido} </p>
         <p> DNI: ${e.dni} </p>
         <p> Monto: ${e.monto} </p>
         <p> Veraz: ${e.veraz} </p>
         <p> Plazo: ${e.plazo} </p>`
+
+        clienteLog.appendChild(reg)
     }
 }
 
+// OCULTAR REGISTRO
+
+function ocultarReg() {
+    reg.remove();
+}
+
+// BUSCAR POR DNI
+
 function buscarP() {
 
-    for (e of registroClientes){
-        if (ee = e.dni){
-            console.log(` le pegaste rey: ${e.dni}`)
-        } else{
-            console.log(`tas flaiando rey`)
+    setTimeout(() => {
+        let timerInterval
+        Swal.fire({
+            title: 'VERIFICANDO BASE DE DATOS',
+            html: 'ESPERA ESTIMADA <b></b> MILISEGUNDOS.',
+            timer: 4800,
+            timerProgressBar: true,
+            didOpen: () => {
+                Swal.showLoading()
+                const b = Swal.getHtmlContainer().querySelector('b')
+                timerInterval = setInterval(() => {
+                    b.textContent = Swal.getTimerLeft()
+                }, 100)
+            },
+            willClose: () => {
+                clearInterval(timerInterval)
+            }
+        })
+    }, 0);
+
+    setTimeout(() => {
+        for (let i = 0; i < registroClientes.length; i++) {
+
+            if (registroClientes[i][`dni`] == dni.value) {
+                console.log(`CLIENTE ENCONTRADO`);
+                let dniEncontrado = document.createElement(`div`);
+                dniEncontrado.innerHTML = `<br><p> El/la cliente ${registroClientes[i][`nombre`]} ${registroClientes[i][`apellido`]} tiene vigente una operación de préstamo </p>`;
+                buscarDNI.appendChild(dniEncontrado)
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'USUARIO ENCONTRADO',
+                    text: `Detalles en la página web`,
+                    showConfirmButton: false,
+                    timer: 1500
+                })
+            } else {
+                console.log(`CLIENTE NO ENCONTRADO`);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'CLIENTE NO ENCONTRADO',
+                    text: 'Revisé el DNI o intente con otro',
+                })
+            }
+
         }
-        
-    }
+    }, 5000);
 
-    let searchP = document.createElement("div")
-
-    // searchP.innerHTML = `<p> Nombre: ${nombre} </p>
-    // <p> Apellido: ${apellido} </p>
-    // <p> DNI: ${dni} </p>`
-
-    buscarDNI.appendChild(searchP)
-
-    console.log(ee)
 }
 
 // LOCAL STORAGE + CREACION DE ARRAY
@@ -161,16 +225,19 @@ localStorage.getItem("registroClientes") ?
         registroClientes.push(cliente1, cliente2, cliente3, cliente4, cliente5),
         localStorage.setItem("registroClientes", JSON.stringify(registroClientes)))
 
+// 
 
-// let gil = registroClientes.includes()
-// console.log(registroClientes)
-// console.log(gil)
+fetch("https://api-dolar-argentina.herokuapp.com/api/dolaroficial")
+.then(response => response.json())
+.then(data => {
 
-// if(localStorage.getItem("registroClientes")){
-//     registroClientes = JSON.parse(localStorage.getItem("registroClientes"))
-//     console.log(registroClientes)
-// }else{
-//     console.log("Primer seteo de storage")
-//     registroClientes.push(cliente1, cliente2, cliente3, cliente4, cliente5)
-//     localStorage.setItem("registroClientes", JSON.stringify(registroClientes))
-// }
+    let cotireal = document.createElement(`p`);
+    cotireal.innerHTML = `El precio del dolar actualmente es de ${data.compra} ARS`;
+    cotizacion.appendChild(cotireal)
+// ACTUALIZAR COTIZACION CADA 10 SEG
+    setInterval(() => {
+        cotireal.innerHTML = `El precio del dolar actualmente es de ${data.compra} ARS`;
+    }, 10000);
+
+})
+
